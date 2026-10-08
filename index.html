@@ -225,4 +225,206 @@
     let streak = 0;
 
     function getKoreanTimeString(h, m, s) {
-      const pureKoreanHours =
+      const pureKoreanHours = ["", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두"];
+      let str = `${pureKoreanHours[h]} 시`;
+      if (m > 0) {
+        str += ` ${m} 분`;
+      }
+      if (difficulty === 'sec' && s > 0) {
+        str += ` ${s} 초`;
+      }
+      return str + "입니다.";
+    }
+
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function setDifficulty(diff) {
+      difficulty = diff;
+      document.querySelectorAll('.btn-diff').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      const secGroup = document.getElementById('secGroup');
+      secGroup.style.display = (diff === 'sec') ? 'flex' : 'none';
+
+      generateNewQuestion();
+    }
+
+    function generateNewQuestion() {
+      targetHour = Math.floor(Math.random() * 12) + 1;
+
+      if (difficulty === 'easy') {
+        targetMin = Math.random() < 0.5 ? 0 : 30;
+        targetSec = 0;
+      } else if (difficulty === 'medium') {
+        targetMin = Math.floor(Math.random() * 12) * 5;
+        targetSec = 0;
+      } else if (difficulty === 'hard') {
+        targetMin = Math.floor(Math.random() * 60);
+        targetSec = 0;
+      } else if (difficulty === 'sec') {
+        targetMin = Math.floor(Math.random() * 60);
+        targetSec = Math.floor(Math.random() * 60);
+      }
+
+      document.getElementById('ansHour').value = '';
+      document.getElementById('ansMin').value = '';
+      document.getElementById('ansSec').value = '';
+      document.getElementById('feedback').innerText = '';
+      document.getElementById('feedback').className = 'feedback';
+      document.getElementById('ansHour').focus();
+
+      drawClock();
+    }
+
+    function drawClock() {
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.translate(radius, radius);
+
+      // 시계 배경 테두리
+      ctx.beginPath();
+      ctx.arc(0, 0, radius - 12, 0, 2 * Math.PI);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#374151';
+      ctx.stroke();
+
+      // 1. [분 숫자 표기] (00, 05, 10, ... 55) - 시계 바깥 테두리 부근
+      ctx.textBaseline = "middle";
+      ctx.textAlign = "center";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillStyle = "#2563eb"; // 구분하기 쉽도록 파란색으로 표현
+
+      for (let num = 0; num < 12; num++) {
+        let minVal = num * 5;
+        let minStr = minVal < 10 ? '0' + minVal : minVal.toString();
+        let ang = num * Math.PI / 6;
+        
+        ctx.rotate(ang);
+        ctx.translate(0, -radius + 24);
+        ctx.rotate(-ang);
+        ctx.fillText(minStr, 0, 0);
+        ctx.rotate(ang);
+        ctx.translate(0, radius - 24);
+        ctx.rotate(-ang);
+      }
+
+      // 2. [시 숫자 표기] (1 ~ 12) - 크고 선명하게 표시
+      ctx.font = "bold 26px sans-serif";
+      ctx.fillStyle = "#111827";
+
+      for (let num = 1; num <= 12; num++) {
+        let ang = num * Math.PI / 6;
+        ctx.rotate(ang);
+        ctx.translate(0, -radius + 54);
+        ctx.rotate(-ang);
+        ctx.fillText(num.toString(), 0, 0);
+        ctx.rotate(ang);
+        ctx.translate(0, radius - 54);
+        ctx.rotate(-ang);
+      }
+
+      // 3. 작은 눈금 (60개)
+      for (let i = 0; i < 60; i++) {
+        let ang = i * Math.PI / 30;
+        ctx.beginPath();
+        ctx.lineWidth = i % 5 === 0 ? 3 : 1;
+        ctx.strokeStyle = i % 5 === 0 ? "#374151" : "#d1d5db";
+        let startR = radius - 35;
+        let endR = i % 5 === 0 ? radius - 42 : radius - 39;
+        ctx.moveTo(startR * Math.sin(ang), -startR * Math.cos(ang));
+        ctx.lineTo(endR * Math.sin(ang), -endR * Math.cos(ang));
+        ctx.stroke();
+      }
+
+      // 시/분/초 각도 계산
+      let secRad = (targetSec * Math.PI / 30);
+      let minRad = (targetMin * Math.PI / 30) + (secRad / 60);
+      let hourRad = ((targetHour % 12) * Math.PI / 6) + (minRad / 12);
+
+      // 시침 (두껍고 짧음)
+      drawHand(hourRad, radius * 0.42, 8, "#111827");
+
+      // 분침 (길고 파란색 포인트)
+      drawHand(minRad, radius * 0.62, 5, "#2563eb");
+
+      // 초침 (빨간색)
+      if (difficulty === 'sec') {
+        drawHand(secRad, radius * 0.72, 2, "#ef4444");
+      }
+
+      // 중앙 고정점
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, 2 * Math.PI);
+      ctx.fillStyle = "#ef4444";
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawHand(pos, length, width, color) {
+      ctx.beginPath();
+      ctx.lineWidth = width;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = color;
+      ctx.moveTo(0, 0);
+      ctx.rotate(pos);
+      ctx.lineTo(0, -length);
+      ctx.stroke();
+      ctx.rotate(-pos);
+    }
+
+    function checkAnswer() {
+      const userHour = parseInt(document.getElementById('ansHour').value);
+      const userMin = parseInt(document.getElementById('ansMin').value) || 0;
+      const userSec = parseInt(document.getElementById('ansSec').value) || 0;
+
+      if (isNaN(userHour)) {
+        alert("시간을 입력해주세요!");
+        return;
+      }
+
+      const feedbackEl = document.getElementById('feedback');
+      const timeSpeech = getKoreanTimeString(targetHour, targetMin, targetSec);
+
+      const isHourCorrect = (userHour % 12) === (targetHour % 12);
+      const isMinCorrect = userMin === targetMin;
+      const isSecCorrect = (difficulty !== 'sec') || (userSec === targetSec);
+
+      if (isHourCorrect && isMinCorrect && isSecCorrect) {
+        feedbackEl.innerText = `⭕ 정답입니다! (${timeSpeech})`;
+        feedbackEl.className = 'feedback correct';
+        score++;
+        streak++;
+        speakText(`정답입니다. ${timeSpeech}`);
+        setTimeout(generateNewQuestion, 2000);
+      } else {
+        feedbackEl.innerText = `❌ 틀렸습니다. 다시 시도해보세요!`;
+        feedbackEl.className = 'feedback wrong';
+        streak = 0;
+        speakText("틀렸습니다. 다시 시도해보세요.");
+      }
+
+      document.getElementById('score').innerText = score;
+      document.getElementById('streak').innerText = streak;
+    }
+
+    document.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        checkAnswer();
+      }
+    });
+
+    generateNewQuestion();
+  </script>
+</body>
+</html>
