@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>랜덤 시계 읽기 학습</title>
   <style>
     :root {
@@ -14,6 +14,7 @@
       --text-muted: #6b7280;
       --accent-green: #10b981;
       --accent-red: #ef4444;
+      --active-field: #e0e7ff;
     }
 
     * {
@@ -21,6 +22,7 @@
       margin: 0;
       padding: 0;
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      touch-action: manipulation;
     }
 
     body {
@@ -30,41 +32,47 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      padding: 20px;
+      padding: 12px;
     }
 
     .container {
       background: var(--card-bg);
       border-radius: 20px;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 500px;
-      padding: 24px;
+      max-width: 420px;
+      padding: 16px;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     h1 {
-      font-size: 1.5rem;
-      margin-bottom: 12px;
+      font-size: 1.3rem;
+      margin-bottom: 10px;
       color: var(--primary);
     }
 
     .controls {
       display: flex;
       justify-content: center;
-      gap: 8px;
-      margin-bottom: 16px;
+      gap: 6px;
+      margin-bottom: 12px;
       flex-wrap: wrap;
+      width: 100%;
     }
 
     .btn-diff {
       border: 1px solid #e5e7eb;
       background: #f9fafb;
-      padding: 6px 12px;
-      border-radius: 12px;
-      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
       cursor: pointer;
       transition: all 0.2s;
+      flex: 1;
+      min-width: 70px;
     }
 
     .btn-diff.active {
@@ -76,9 +84,9 @@
 
     .clock-wrapper {
       position: relative;
-      width: 320px;
-      height: 320px;
-      margin: 0 auto 20px;
+      width: 260px;
+      height: 260px;
+      margin: 0 auto 12px;
     }
 
     canvas {
@@ -87,64 +95,95 @@
       border-radius: 50%;
     }
 
+    /* 입력 박스 영역 */
     .input-section {
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 10px;
+      width: 100%;
     }
 
-    .input-group {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    input[type="number"] {
-      width: 65px;
+    .input-box {
+      width: 60px;
       height: 48px;
-      text-align: center;
-      font-size: 1.25rem;
-      font-weight: bold;
+      background: #f3f4f6;
       border: 2px solid #d1d5db;
       border-radius: 10px;
-      outline: none;
-      transition: border-color 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-    input[type="number"]:focus {
+    .input-box.active {
       border-color: var(--primary);
+      background-color: var(--active-field);
+      color: var(--primary);
     }
 
     .unit-text {
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: bold;
       color: var(--text-muted);
+      margin-right: 4px;
     }
 
-    .btn-submit {
+    /* 가상 키패드 */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
       width: 100%;
-      height: 48px;
+      max-width: 320px;
+      margin-top: 6px;
+    }
+
+    .key-btn {
+      height: 46px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+      transition: background 0.1s;
+    }
+
+    .key-btn:active {
+      background: #e2e8f0;
+    }
+
+    .key-btn.action {
+      font-size: 0.95rem;
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .key-btn.submit {
       background: var(--primary);
       color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.2s;
+      border-color: var(--primary);
     }
 
-    .btn-submit:hover {
+    .key-btn.submit:active {
       background: var(--primary-hover);
     }
 
     .feedback {
-      margin-top: 16px;
-      min-height: 28px;
-      font-size: 1.1rem;
+      min-height: 24px;
+      font-size: 1rem;
       font-weight: bold;
+      margin-top: 6px;
     }
 
     .feedback.correct {
@@ -158,10 +197,11 @@
     .stats {
       display: flex;
       justify-content: space-around;
-      margin-top: 20px;
-      padding-top: 16px;
+      width: 100%;
+      margin-top: 12px;
+      padding-top: 10px;
       border-top: 1px solid #e5e7eb;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: var(--text-muted);
     }
 
@@ -178,31 +218,44 @@
 
     <div class="controls">
       <button class="btn-diff active" onclick="setDifficulty('easy')">쉬움 (정각/30분)</button>
-      <button class="btn-diff" onclick="setDifficulty('medium')">보통 (5분 단위)</button>
-      <button class="btn-diff" onclick="setDifficulty('hard')">어려움 (1분 단위)</button>
+      <button class="btn-diff" onclick="setDifficulty('medium')">보통 (5분)</button>
+      <button class="btn-diff" onclick="setDifficulty('hard')">어려움 (1분)</button>
       <button class="btn-diff" onclick="setDifficulty('sec')">초 포함</button>
     </div>
 
     <div class="clock-wrapper">
-      <canvas id="clock" width="320" height="320"></canvas>
+      <canvas id="clock" width="260" height="260"></canvas>
     </div>
 
+    <!-- 답안 입력칸 (디바이스 키보드 방지용 커스텀 입력창) -->
     <div class="input-section">
-      <div class="input-group">
-        <input type="number" id="ansHour" min="1" max="12" placeholder="시">
-        <span class="unit-text">시</span>
-      </div>
-      <div class="input-group">
-        <input type="number" id="ansMin" min="0" max="59" placeholder="분">
-        <span class="unit-text">분</span>
-      </div>
-      <div class="input-group" id="secGroup" style="display: none;">
-        <input type="number" id="ansSec" min="0" max="59" placeholder="초">
+      <div class="input-box active" id="boxHour" onclick="selectField('hour')"></div>
+      <span class="unit-text">시</span>
+
+      <div class="input-box" id="boxMin" onclick="selectField('min')"></div>
+      <span class="unit-text">분</span>
+
+      <div id="secWrapper" style="display: none; align-items: center;">
+        <div class="input-box" id="boxSec" onclick="selectField('sec')"></div>
         <span class="unit-text">초</span>
       </div>
     </div>
 
-    <button class="btn-submit" onclick="checkAnswer()">정답 확인</button>
+    <!-- 가상 숫자 키패드 -->
+    <div class="keypad">
+      <button class="key-btn" onclick="pressKey('1')">1</button>
+      <button class="key-btn" onclick="pressKey('2')">2</button>
+      <button class="key-btn" onclick="pressKey('3')">3</button>
+      <button class="key-btn" onclick="pressKey('4')">4</button>
+      <button class="key-btn" onclick="pressKey('5')">5</button>
+      <button class="key-btn" onclick="pressKey('6')">6</button>
+      <button class="key-btn" onclick="pressKey('7')">7</button>
+      <button class="key-btn" onclick="pressKey('8')">8</button>
+      <button class="key-btn" onclick="pressKey('9')">9</button>
+      <button class="key-btn action" onclick="pressKey('DEL')">⌫ 지우기</button>
+      <button class="key-btn" onclick="pressKey('0')">0</button>
+      <button class="key-btn action submit" onclick="checkAnswer()">확인</button>
+    </div>
 
     <div class="feedback" id="feedback"></div>
 
@@ -224,15 +277,14 @@
     let score = 0;
     let streak = 0;
 
+    let activeField = 'hour'; // 'hour', 'min', 'sec'
+    let values = { hour: '', min: '', sec: '' };
+
     function getKoreanTimeString(h, m, s) {
       const pureKoreanHours = ["", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉", "열", "열한", "열두"];
       let str = `${pureKoreanHours[h]} 시`;
-      if (m > 0) {
-        str += ` ${m} 분`;
-      }
-      if (difficulty === 'sec' && s > 0) {
-        str += ` ${s} 초`;
-      }
+      if (m > 0) str += ` ${m} 분`;
+      if (difficulty === 'sec' && s > 0) str += ` ${s} 초`;
       return str + "입니다.";
     }
 
@@ -246,13 +298,47 @@
       }
     }
 
+    function selectField(field) {
+      activeField = field;
+      document.querySelectorAll('.input-box').forEach(box => box.classList.remove('active'));
+      
+      if (field === 'hour') document.getElementById('boxHour').classList.add('active');
+      if (field === 'min') document.getElementById('boxMin').classList.add('active');
+      if (field === 'sec') document.getElementById('boxSec').classList.add('active');
+    }
+
+    function pressKey(key) {
+      if (key === 'DEL') {
+        values[activeField] = values[activeField].slice(0, -1);
+      } else {
+        // 입력 자릿수 제한 (최대 2자리)
+        if (values[activeField].length < 2) {
+          values[activeField] += key;
+        }
+
+        // 입력 완료 시 다음 칸 자동 이동
+        if (activeField === 'hour' && values.hour.length === 2) {
+          selectField('min');
+        } else if (activeField === 'min' && values.min.length === 2) {
+          if (difficulty === 'sec') selectField('sec');
+        }
+      }
+      updateInputDisplay();
+    }
+
+    function updateInputDisplay() {
+      document.getElementById('boxHour').innerText = values.hour;
+      document.getElementById('boxMin').innerText = values.min;
+      document.getElementById('boxSec').innerText = values.sec;
+    }
+
     function setDifficulty(diff) {
       difficulty = diff;
       document.querySelectorAll('.btn-diff').forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
       
-      const secGroup = document.getElementById('secGroup');
-      secGroup.style.display = (diff === 'sec') ? 'flex' : 'none';
+      const secWrapper = document.getElementById('secWrapper');
+      secWrapper.style.display = (diff === 'sec') ? 'flex' : 'none';
 
       generateNewQuestion();
     }
@@ -274,12 +360,12 @@
         targetSec = Math.floor(Math.random() * 60);
       }
 
-      document.getElementById('ansHour').value = '';
-      document.getElementById('ansMin').value = '';
-      document.getElementById('ansSec').value = '';
+      values = { hour: '', min: '', sec: '' };
+      updateInputDisplay();
+      selectField('hour');
+
       document.getElementById('feedback').innerText = '';
       document.getElementById('feedback').className = 'feedback';
-      document.getElementById('ansHour').focus();
 
       drawClock();
     }
@@ -289,82 +375,78 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.translate(radius, radius);
 
-      // 시계 배경 테두리
+      // 시계 배경
       ctx.beginPath();
-      ctx.arc(0, 0, radius - 12, 0, 2 * Math.PI);
+      ctx.arc(0, 0, radius - 10, 0, 2 * Math.PI);
       ctx.fillStyle = 'white';
       ctx.fill();
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 5;
       ctx.strokeStyle = '#374151';
       ctx.stroke();
 
-      // 1. [분 숫자 표기] (00, 05, 10, ... 55) - 시계 바깥 테두리 부근
+      // 1. [분 숫자] (00~55 파란색)
       ctx.textBaseline = "middle";
       ctx.textAlign = "center";
-      ctx.font = "bold 13px sans-serif";
-      ctx.fillStyle = "#2563eb"; // 구분하기 쉽도록 파란색으로 표현
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillStyle = "#2563eb";
 
       for (let num = 0; num < 12; num++) {
         let minVal = num * 5;
         let minStr = minVal < 10 ? '0' + minVal : minVal.toString();
         let ang = num * Math.PI / 6;
-        
         ctx.rotate(ang);
-        ctx.translate(0, -radius + 24);
+        ctx.translate(0, -radius + 20);
         ctx.rotate(-ang);
         ctx.fillText(minStr, 0, 0);
         ctx.rotate(ang);
-        ctx.translate(0, radius - 24);
+        ctx.translate(0, radius - 20);
         ctx.rotate(-ang);
       }
 
-      // 2. [시 숫자 표기] (1 ~ 12) - 크고 선명하게 표시
-      ctx.font = "bold 26px sans-serif";
+      // 2. [시 숫자] (1~12 크게 강조)
+      ctx.font = "bold 22px sans-serif";
       ctx.fillStyle = "#111827";
 
       for (let num = 1; num <= 12; num++) {
         let ang = num * Math.PI / 6;
         ctx.rotate(ang);
-        ctx.translate(0, -radius + 54);
+        ctx.translate(0, -radius + 44);
         ctx.rotate(-ang);
         ctx.fillText(num.toString(), 0, 0);
         ctx.rotate(ang);
-        ctx.translate(0, radius - 54);
+        ctx.translate(0, radius - 44);
         ctx.rotate(-ang);
       }
 
-      // 3. 작은 눈금 (60개)
+      // 눈금
       for (let i = 0; i < 60; i++) {
         let ang = i * Math.PI / 30;
         ctx.beginPath();
-        ctx.lineWidth = i % 5 === 0 ? 3 : 1;
+        ctx.lineWidth = i % 5 === 0 ? 2 : 1;
         ctx.strokeStyle = i % 5 === 0 ? "#374151" : "#d1d5db";
-        let startR = radius - 35;
-        let endR = i % 5 === 0 ? radius - 42 : radius - 39;
+        let startR = radius - 28;
+        let endR = i % 5 === 0 ? radius - 34 : radius - 31;
         ctx.moveTo(startR * Math.sin(ang), -startR * Math.cos(ang));
         ctx.lineTo(endR * Math.sin(ang), -endR * Math.cos(ang));
         ctx.stroke();
       }
 
-      // 시/분/초 각도 계산
+      // 바늘 각도
       let secRad = (targetSec * Math.PI / 30);
       let minRad = (targetMin * Math.PI / 30) + (secRad / 60);
       let hourRad = ((targetHour % 12) * Math.PI / 6) + (minRad / 12);
 
-      // 시침 (두껍고 짧음)
-      drawHand(hourRad, radius * 0.42, 8, "#111827");
+      // 바늘 그리기
+      drawHand(hourRad, radius * 0.42, 7, "#111827");
+      drawHand(minRad, radius * 0.62, 4, "#2563eb");
 
-      // 분침 (길고 파란색 포인트)
-      drawHand(minRad, radius * 0.62, 5, "#2563eb");
-
-      // 초침 (빨간색)
       if (difficulty === 'sec') {
         drawHand(secRad, radius * 0.72, 2, "#ef4444");
       }
 
-      // 중앙 고정점
+      // 중앙 점
       ctx.beginPath();
-      ctx.arc(0, 0, 7, 0, 2 * Math.PI);
+      ctx.arc(0, 0, 6, 0, 2 * Math.PI);
       ctx.fillStyle = "#ef4444";
       ctx.fill();
 
@@ -384,9 +466,9 @@
     }
 
     function checkAnswer() {
-      const userHour = parseInt(document.getElementById('ansHour').value);
-      const userMin = parseInt(document.getElementById('ansMin').value) || 0;
-      const userSec = parseInt(document.getElementById('ansSec').value) || 0;
+      const userHour = parseInt(values.hour);
+      const userMin = values.min === '' ? 0 : parseInt(values.min);
+      const userSec = values.sec === '' ? 0 : parseInt(values.sec);
 
       if (isNaN(userHour)) {
         alert("시간을 입력해주세요!");
@@ -417,12 +499,6 @@
       document.getElementById('score').innerText = score;
       document.getElementById('streak').innerText = streak;
     }
-
-    document.addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        checkAnswer();
-      }
-    });
 
     generateNewQuestion();
   </script>
